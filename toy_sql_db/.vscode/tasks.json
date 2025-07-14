@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build toy_sql_db",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-Iinclude",
+                "src/*.cpp",
+                "-o",
+                "build/toy_sql_db"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build the toy SQL database"
+        }
+    ]
+}
