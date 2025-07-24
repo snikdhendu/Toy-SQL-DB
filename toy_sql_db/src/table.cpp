@@ -3,29 +3,41 @@ using namespace std;
 #include "table.h"
 #include <cstring>
 
-void insert_row(Table &table, int id, const std::string &username, const std::string &email)
+void *row_slot(Table *table, uint32_t row_num)
 {
-    if (table.num_rows >= TABLE_MAX_ROWS)
+    uint32_t page_num = row_num / ROWS_PER_PAGE;
+    void *page = get_page(table->pager, page_num);
+    uint32_t row_offset = row_num % ROWS_PER_PAGE;
+    return (char *)page + (row_offset * ROW_SIZE);
+}
+
+void insert_row(Table &table, int id, const string &username, const string &email)
+{
+    if (table.num_rows >= TABLE_MAX_PAGES * ROWS_PER_PAGE)
     {
-        cout << "Max limit reached";
+        cout << "Max rows reached.\n";
         exit(1);
     }
-    else
-    {
-        Row &row = table.rows[table.num_rows++];
-        row.id = id;
-        strncpy(row.username, username.c_str(), sizeof(row.username) - 1);
-        row.username[sizeof(row.username) - 1] = '\0'; // Ensure null termination
-        strncpy(row.email, email.c_str(), sizeof(row.email) - 1);
-        row.email[sizeof(row.email) - 1] = '\0'; // Ensure null termination
-    }
+
+    Row row;
+    row.id = id;
+    strncpy(row.username, username.c_str(), sizeof(row.username) - 1);
+    row.username[sizeof(row.username) - 1] = '\0';
+    strncpy(row.email, email.c_str(), sizeof(row.email) - 1);
+    row.email[sizeof(row.email) - 1] = '\0';
+
+    void *destination = row_slot(&table, table.num_rows);
+    memcpy(destination, &row, ROW_SIZE);
+
+    table.num_rows++;
 }
 
 void select_rows(const Table &table)
 {
-    for (int i = 0; i < table.num_rows; i++)
+    for (uint32_t i = 0; i < table.num_rows; i++)
     {
-        const Row &row = table.rows[i];
-        cout << "ID: " << row.id << ", Username: " << row.username << ", Email: " << row.email << endl;
+        Row row;
+        memcpy(&row, row_slot((Table *)&table, i), ROW_SIZE);
+        cout << "ID: " << row.id << ", Username: " << row.username << ", Email: " << row.email << "\n";
     }
 }
